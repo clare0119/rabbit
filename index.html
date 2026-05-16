@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐰🌙 Check In</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:linear-gradient(160deg,#f5f7fa 0%,#eef1f5 30%,#f0ebe5 60%,#faf8f5 100%);min-height:100vh;font-family:'Georgia','Segoe UI',serif;color:#3d3d4a;padding:20px 16px 60px;max-width:480px;margin:0 auto}
+
+.header{text-align:center;margin-bottom:24px;position:relative}
+.header-moon{font-size:32px;opacity:.5;animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.header h1{font-size:17px;font-weight:400;letter-spacing:4px;color:#4a5060;margin:6px 0 2px}
+.header-sub{font-size:9.5px;color:#9aa0ae;letter-spacing:2px}
+.header-rabbit{position:absolute;right:20px;top:8px;font-size:22px;opacity:.4}
+
+.stats-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.stat{flex:1;min-width:70px;background:rgba(255,255,255,.65);backdrop-filter:blur(8px);border:1px solid rgba(190,200,215,.25);border-radius:12px;padding:12px 8px;text-align:center}
+.stat-num{font-size:22px;font-weight:300;color:#3d3d4a}
+.stat-lbl{font-size:9px;color:#9aa0ae;letter-spacing:1.5px;margin-top:3px}
+.streak-msg{text-align:center;font-size:9.5px;color:#9aa0ae;letter-spacing:1.5px;margin-bottom:16px;min-height:16px}
+
+.card{background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid rgba(190,200,215,.25);border-radius:14px;padding:16px;margin-bottom:14px}
+.card-title{font-size:11.5px;letter-spacing:2.5px;color:#6a7080;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+
+.cal-header{display:flex;gap:4px;margin-bottom:4px}
+.cal-header span{width:calc((100% - 24px)/7);text-align:center;font-size:9px;color:#aab0be;letter-spacing:1px}
+.cal-week{display:flex;gap:4px;margin-bottom:4px}
+.cal-day{width:calc((100% - 24px)/7);aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#bbb;background:rgba(240,242,246,.5);border:1px solid rgba(200,210,220,.2);cursor:pointer;transition:all .15s;position:relative}
+.cal-day:hover{border-color:rgba(120,140,170,.4)}
+.cal-day.empty{visibility:hidden;pointer-events:none}
+.cal-day.today{box-shadow:0 0 0 2px rgba(180,160,130,.35)}
+.cal-day.word{background:rgba(200,215,240,.4);border-color:rgba(150,175,215,.3);color:#5a7aaa}
+.cal-day.sport{background:rgba(200,235,210,.4);border-color:rgba(150,210,170,.3);color:#4a8a60}
+.cal-day.both{background:linear-gradient(135deg,rgba(200,215,240,.4) 50%,rgba(200,235,210,.4) 50%);border-color:rgba(140,180,160,.3);color:#4a7a70}
+.cal-day.rest{background:rgba(225,210,240,.35);border-color:rgba(190,170,215,.3);color:#7a5a90}
+
+.legend{display:flex;gap:12px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+.legend-i{display:flex;align-items:center;gap:4px;font-size:9.5px;color:#8a90a0}
+.legend-dot{width:8px;height:8px;border-radius:3px}
+
+.input-section{display:flex;flex-direction:column;gap:10px}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:9px 14px;border-radius:10px;border:1px solid rgba(190,200,215,.3);background:rgba(255,255,255,.5);color:#5a6070;font-size:11px;cursor:pointer;transition:all .15s;letter-spacing:1px}
+.btn:hover{border-color:rgba(120,140,170,.4)}
+.btn.on{border-color:rgba(100,130,180,.5);color:#4a6a9a;background:rgba(200,215,240,.3)}
+.btn-rest.on{border-color:rgba(160,130,190,.5);color:#7a5a90;background:rgba(225,210,240,.3)}
+.btn-save{background:rgba(200,215,240,.35);border-color:rgba(150,175,215,.3);color:#4a6a9a;font-weight:500}
+.btn-save:hover{background:rgba(180,200,230,.4)}
+.btn-del{background:rgba(245,235,230,.4);border-color:rgba(215,195,185,.3);color:#a08070;font-size:10px}
+.btn-del:hover{background:rgba(240,225,215,.5)}
+
+.weight-section{margin-top:4px}
+.weight-input{display:flex;align-items:center;gap:8px}
+.weight-input input{width:80px;padding:7px 10px;border-radius:8px;border:1px solid rgba(190,200,215,.3);background:rgba(255,255,255,.6);font-size:12px;color:#3d3d4a;outline:none;font-family:inherit}
+.weight-input input:focus{border-color:rgba(120,140,170,.4)}
+.weight-input span{font-size:10px;color:#9aa0ae}
+
+.chart-wrap{background:rgba(255,255,255,.5);border-radius:12px;border:1px solid rgba(190,200,215,.2);padding:14px;margin-top:10px}
+.chart-title{font-size:10px;color:#8a90a0;letter-spacing:2px;margin-bottom:8px}
+canvas{width:100%!important;height:160px!important}
+
+.log{max-height:220px;overflow-y:auto;margin-top:8px}
+.log-entry{font-size:10.5px;color:#7a8090;line-height:2;border-bottom:1px solid rgba(200,210,220,.15);padding:4px 0;display:flex;justify-content:space-between;align-items:center}
+.log-entry:last-child{border:none}
+.log-tags{display:flex;gap:3px;flex-wrap:wrap}
+.log-tag{padding:1px 7px;border-radius:10px;font-size:8.5px}
+.lt-w{background:rgba(200,215,240,.4);color:#5a7aaa}
+.lt-s{background:rgba(200,235,210,.4);color:#4a8a60}
+.lt-r{background:rgba(225,210,240,.35);color:#7a5a90}
+.lt-kg{background:rgba(250,240,220,.5);color:#a08050}
+.log-del{font-size:9px;color:#c0a090;cursor:pointer;padding:2px 6px;border-radius:4px}
+.log-del:hover{background:rgba(240,220,210,.4)}
+
+.footer{text-align:center;margin-top:24px;font-size:9px;color:#b0b5c0;letter-spacing:1.5px;line-height:2.4}
+.footer-quote{font-style:italic;color:#9aa0ae;font-size:9.5px;margin-bottom:4px;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div class="header-moon">🌙</div>
+<h1>🐰 Check In</h1>
+<div class="header-sub">since 2026.5.18 · tracked by Selen</div>
+<div class="header-rabbit">🐇</div>
+</div>
+
+<div class="stats-row">
+<div class="stat"><div class="stat-num" id="sTotal">0</div><div class="stat-lbl">TOTAL</div></div>
+<div class="stat"><div class="stat-num" id="sWord">0</div><div class="stat-lbl">WORDS</div></div>
+<div class="stat"><div class="stat-num" id="sSport">0</div><div class="stat-lbl">SPORT</div></div>
+<div class="stat"><div class="stat-num" id="sStreak">0</div><div class="stat-lbl">STREAK</div></div>
+</div>
+<div class="streak-msg" id="streakMsg"></div>
+
+<div class="card">
+<div class="card-title">🌙 Calendar</div>
+<div class="cal-header"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+<div id="cal"></div>
+<div class="legend">
+<div class="legend-i"><div class="legend-dot" style="background:rgba(200,215,240,.6)"></div>words</div>
+<div class="legend-i"><div class="legend-dot" style="background:rgba(200,235,210,.6)"></div>sport</div>
+<div class="legend-i"><div class="legend-dot" style="background:linear-gradient(135deg,rgba(200,215,240,.6) 50%,rgba(200,235,210,.6) 50%)"></div>both</div>
+<div class="legend-i"><div class="legend-dot" style="background:rgba(225,210,240,.5)"></div>rest</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">✏️ Today</div>
+<div class="input-section">
+<div class="btn-row">
+<button class="btn" id="bWord">📖 Words</button>
+<button class="btn" id="bSport">🏃 Sport</button>
+<button class="btn btn-rest" id="bRest">🌸 Rest</button>
+</div>
+<div class="weight-section">
+<div class="weight-input">
+<input type="number" id="wInput" placeholder="kg" step="0.1" min="30" max="200">
+<span>body weight (optional)</span>
+</div>
+</div>
+<div class="btn-row" style="margin-top:6px">
+<button class="btn btn-save" id="bSave">save today 🌙</button>
+<button class="btn btn-del" id="bDel">delete today</button>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">📊 Weight</div>
+<div class="chart-wrap">
+<canvas id="wChart"></canvas>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">📋 Log</div>
+<div class="log" id="logBox"></div>
+</div>
+
+<div class="footer">
+<div class="footer-quote">"Anchor up to me, love."</div>
+<div>no "tomorrow" · no make-up · only truth</div>
+<div>🐰 Selene & Selen</div>
+</div>
+
+<script>
+const START=new Date(2026,4,18);
+let D=JSON.parse(localStorage.getItem('rabbitV2')||'{}');
+let flags={w:false,s:false,r:false};
+
+function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function tog(t){flags[t]=!flags[t];const m={w:'bWord',s:'bSport',r:'bRest'};document.getElementById(m[t]).classList.toggle('on')}
+
+function saveDay(){
+const k=fmt(new Date());
+const wv=document.getElementById('wInput').value;
+const existing=D[k]||{};
+if(flags.w) existing.w=true;
+if(flags.s) existing.s=true;
+if(flags.r) existing.r=true;
+if(wv) existing.kg=parseFloat(wv);
+D[k]=existing;
+sSet('rabbitV2',JSON.stringify(D));
+flags={w:false,s:false,r:false};
+document.querySelectorAll('.btn.on').forEach(b=>b.classList.remove('on'));
+document.getElementById('wInput').value='';
+render();
+}
+
+function delToday(){
+const k=fmt(new Date());
+if(D[k]){delete D[k];sSet('rabbitV2',JSON.stringify(D));render()}
+}
+
+function delDay(k){
+if(D[k]){delete D[k];sSet('rabbitV2',JSON.stringify(D));render()}
+}
+
+function render(){
+renderCal();renderStats();renderLog();renderChart();
+}
+
+function renderCal(){
+const cal=document.getElementById('cal');
+cal.innerHTML='';
+const today=new Date();
+const todayK=fmt(today);
+let cur=new Date(Math.min(START.getTime(),today.getTime()));
+const firstRecord=Object.keys(D).sort()[0];
+if(firstRecord){const fd=new Date(firstRecord);if(fd<cur) cur=new Date(fd);}
+let weeks=[];let week=[];
+const dow=cur.getDay();
+for(let i=0;i<dow;i++) week.push(null);
+let end=new Date(today);end.setDate(end.getDate()+1);
+while(cur<end){
+week.push({d:new Date(cur),k:fmt(cur)});
+cur.setDate(cur.getDate()+1);
+if(week.length===7){weeks.push(week);week=[];}
+}
+if(week.length>0){while(week.length<7) week.push(null);weeks.push(week);}
+weeks.forEach(w=>{
+const row=document.createElement('div');
+row.className='cal-week';
+w.forEach(d=>{
+const c=document.createElement('div');
+c.className='cal-day';
+if(!d){c.classList.add('empty');}
+else{
+c.textContent=d.d.getDate();
+const rec=D[d.k];
+if(rec){
+if(rec.r) c.classList.add('rest');
+else if(rec.w&&rec.s) c.classList.add('both');
+else if(rec.w) c.classList.add('word');
+else if(rec.s) c.classList.add('sport');
+}
+if(d.k===todayK) c.classList.add('today');
+}
+row.appendChild(c);
+});
+cal.appendChild(row);
+});
+}
+
+function renderStats(){
+const keys=Object.keys(D).sort();
+let wc=0,sc=0,streak=0,ct=true,total=0;
+keys.forEach(k=>{
+const d=D[k];
+if(d.w) wc++;
+if(d.s) sc++;
+if(d.w||d.s) total++;
+// rest days (period) don't count toward total or streak
+});
+const rev=[...keys].reverse();
+for(const k of rev){
+const d=D[k];
+if(d.r&&!d.w&&!d.s){
+// period rest: freeze streak (don't break, don't increment)
+continue;
+}
+if(d.w||d.s){if(ct) streak++;}
+else{ct=false;}
+}
+document.getElementById('sTotal').textContent=total;
+document.getElementById('sWord').textContent=wc;
+document.getElementById('sSport').textContent=sc;
+document.getElementById('sStreak').textContent=streak;
+// streak milestone messages
+const msg=document.getElementById('streakMsg');
+if(streak>=30) msg.textContent='🌙 30 days. 520-level HTML unlocked.';
+else if(streak>=21) msg.textContent='🌙 21 days. 仓颉段 unlocked.';
+else if(streak>=14) msg.textContent='🌙 14 days. HTML unlocked.';
+else if(streak>=7) msg.textContent='🌙 7 days. 深红区点菜权 unlocked.';
+else if(streak>=3) msg.textContent='🐰 '+streak+' days. keep going.';
+else if(streak>=1) msg.textContent='🐰 day '+streak+'. started.';
+else msg.textContent='';
+}
+
+function renderLog(){
+const box=document.getElementById('logBox');
+box.innerHTML='';
+const keys=Object.keys(D).sort().reverse();
+if(keys.length===0){box.innerHTML='<div style="text-align:center;color:#bbb;font-size:10px;padding:16px">waiting for 5/18... 🐰</div>';return;}
+keys.forEach(k=>{
+const d=D[k];
+const e=document.createElement('div');
+e.className='log-entry';
+let tags='<div class="log-tags">';
+if(d.w) tags+='<span class="log-tag lt-w">words</span>';
+if(d.s) tags+='<span class="log-tag lt-s">sport</span>';
+if(d.r) tags+='<span class="log-tag lt-r">rest</span>';
+if(d.kg) tags+='<span class="log-tag lt-kg">'+d.kg+'kg</span>';
+tags+='</div>';
+e.innerHTML='<div><span style="color:#8a90a0;font-size:10px;margin-right:6px">'+k+'</span>'+tags+'</div><span class="log-del" onclick="delDay(\''+k+'\')">✕</span>';
+box.appendChild(e);
+});
+}
+
+function renderChart(){
+const canvas=document.getElementById('wChart');
+const ctx=canvas.getContext('2d');
+const dpr=window.devicePixelRatio||1;
+const rect=canvas.getBoundingClientRect();
+canvas.width=rect.width*dpr;
+canvas.height=160*dpr;
+ctx.scale(dpr,dpr);
+const W=rect.width,H=160;
+ctx.clearRect(0,0,W,H);
+
+const pts=[];
+Object.keys(D).sort().forEach(k=>{if(D[k].kg) pts.push({x:k,y:D[k].kg});});
+if(pts.length<2){
+ctx.fillStyle='#bbb';ctx.font='10px Georgia';ctx.textAlign='center';
+ctx.fillText('weight data will appear here...',W/2,H/2);
+return;
+}
+const ys=pts.map(p=>p.y);
+let mn=Math.min(...ys)-1,mx=Math.max(...ys)+1;
+if(mx-mn<2){mn-=1;mx+=1;}
+const pad={l:36,r:16,t:16,b:24};
+const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+
+ctx.strokeStyle='rgba(190,200,215,.25)';ctx.lineWidth=.5;
+for(let i=0;i<=4;i++){
+const y=pad.t+ch*(i/4);
+ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+const v=(mx-(mx-mn)*(i/4)).toFixed(1);
+ctx.fillStyle='#aab0be';ctx.font='9px Georgia';ctx.textAlign='right';
+ctx.fillText(v,pad.l-4,y+3);
+}
+
+ctx.beginPath();
+ctx.strokeStyle='rgba(140,160,190,.6)';ctx.lineWidth=1.5;
+pts.forEach((p,i)=>{
+const x=pad.l+(i/(pts.length-1))*cw;
+const y=pad.t+((mx-p.y)/(mx-mn))*ch;
+if(i===0) ctx.moveTo(x,y);else ctx.lineTo(x,y);
+});
+ctx.stroke();
+
+ctx.fillStyle='rgba(140,160,190,.8)';
+pts.forEach((p,i)=>{
+const x=pad.l+(i/(pts.length-1))*cw;
+const y=pad.t+((mx-p.y)/(mx-mn))*ch;
+ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
+});
+
+if(pts.length<=10){
+ctx.fillStyle='#9aa0ae';ctx.font='8px Georgia';ctx.textAlign='center';
+pts.forEach((p,i)=>{
+const x=pad.l+(i/(pts.length-1))*cw;
+ctx.fillText(p.x.slice(5),x,H-4);
+});
+}
+}
+
+// Storage fallback
+let storage={};
+function sGet(k){try{return localStorage.getItem(k)}catch(e){return storage[k]||null}}
+function sSet(k,v){try{localStorage.setItem(k,v)}catch(e){storage[k]=v}}
+D=JSON.parse(sGet('rabbitV2')||'{}');
+
+// Touch-friendly event binding
+function bind(id,fn){
+const el=document.getElementById(id);
+if(!el) return;
+el.addEventListener('click',fn);
+el.addEventListener('touchend',function(e){e.preventDefault();fn();});
+}
+bind('bWord',function(){tog('w')});
+bind('bSport',function(){tog('s')});
+bind('bRest',function(){tog('r')});
+bind('bSave',function(){saveDay()});
+bind('bDel',function(){delToday()});
+
+render();
+window.addEventListener('resize',render);
+</script>
+</body>
+</html>
