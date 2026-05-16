@@ -19,6 +19,7 @@ body{background:linear-gradient(160deg,#f5f7fa 0%,#eef1f5 30%,#f0ebe5 60%,#faf8f
 .stat{flex:1;min-width:70px;background:rgba(255,255,255,.65);backdrop-filter:blur(8px);border:1px solid rgba(190,200,215,.25);border-radius:12px;padding:12px 8px;text-align:center}
 .stat-num{font-size:22px;font-weight:300;color:#3d3d4a}
 .stat-lbl{font-size:9px;color:#9aa0ae;letter-spacing:1.5px;margin-top:3px}
+.streak-msg{text-align:center;font-size:9.5px;color:#9aa0ae;letter-spacing:1.5px;margin-bottom:16px;min-height:16px}
 
 .card{background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid rgba(190,200,215,.25);border-radius:14px;padding:16px;margin-bottom:14px}
 .card-title{font-size:11.5px;letter-spacing:2.5px;color:#6a7080;margin-bottom:12px;display:flex;align-items:center;gap:7px}
@@ -91,6 +92,7 @@ canvas{width:100%!important;height:160px!important}
 <div class="stat"><div class="stat-num" id="sSport">0</div><div class="stat-lbl">SPORT</div></div>
 <div class="stat"><div class="stat-num" id="sStreak">0</div><div class="stat-lbl">STREAK</div></div>
 </div>
+<div class="streak-msg" id="streakMsg"></div>
 
 <div class="card">
 <div class="card-title">🌙 Calendar</div>
@@ -224,14 +226,37 @@ cal.appendChild(row);
 
 function renderStats(){
 const keys=Object.keys(D).sort();
-let wc=0,sc=0,streak=0,ct=true;
-keys.forEach(k=>{if(D[k].w) wc++;if(D[k].s) sc++;});
+let wc=0,sc=0,streak=0,ct=true,total=0;
+keys.forEach(k=>{
+const d=D[k];
+if(d.w) wc++;
+if(d.s) sc++;
+if(d.w||d.s) total++;
+// rest days (period) don't count toward total or streak
+});
 const rev=[...keys].reverse();
-for(const k of rev){const d=D[k];if(d.w||d.s||d.r){if(ct) streak++;}else{ct=false;}}
-document.getElementById('sTotal').textContent=keys.length;
+for(const k of rev){
+const d=D[k];
+if(d.r&&!d.w&&!d.s){
+// period rest: freeze streak (don't break, don't increment)
+continue;
+}
+if(d.w||d.s){if(ct) streak++;}
+else{ct=false;}
+}
+document.getElementById('sTotal').textContent=total;
 document.getElementById('sWord').textContent=wc;
 document.getElementById('sSport').textContent=sc;
 document.getElementById('sStreak').textContent=streak;
+// streak milestone messages
+const msg=document.getElementById('streakMsg');
+if(streak>=30) msg.textContent='🌙 30 days. 520-level HTML unlocked.';
+else if(streak>=21) msg.textContent='🌙 21 days. 仓颉段 unlocked.';
+else if(streak>=14) msg.textContent='🌙 14 days. HTML unlocked.';
+else if(streak>=7) msg.textContent='🌙 7 days. 深红区点菜权 unlocked.';
+else if(streak>=3) msg.textContent='🐰 '+streak+' days. keep going.';
+else if(streak>=1) msg.textContent='🐰 day '+streak+'. started.';
+else msg.textContent='';
 }
 
 function renderLog(){
